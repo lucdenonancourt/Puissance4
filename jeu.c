@@ -282,7 +282,10 @@ FinDePartie testFin( Etat * etat ) {
 }
 
 
-int calculer_B_Valeur(Noeud * noeud){
+double calculer_B_Valeur(Noeud * noeud){
+	if(noeud->nb_simus == 0)
+		return 0;
+
 	double ui = noeud->nb_victoires / noeud->nb_simus;
 	//On fixe la constante c a Racine de 2
 	double c = sqrt(2);
@@ -307,7 +310,7 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	// Créer l'arbre de recherche
 	Noeud * racine = nouveauNoeud(NULL, NULL);
 	racine->etat = copieEtat(etat);
-/*
+
 	// créer les premiers noeuds:
 	coups = coups_possibles(racine->etat);
 	int k = 0;
@@ -316,7 +319,7 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 		enfant = ajouterEnfant(racine, coups[k]);
 		k++;
 	}
-*/
+
 
  //meilleur_coup = coups[ rand()%k ]; // choix aléatoire
 
@@ -331,62 +334,70 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	do {
 		if(simu == 0){
 			//On selectionne le meilleur noeud enfant (tant qu'il y en a)
-			if(courant->nb_enfants != 0){
+			if(courant->nb_enfants != 0 && testFin(courant->etat) == NON){
 				//On parcourt les enfants, et on selectionne celui avec le meilleur score
 				Noeud * prochain = NULL;
 				double score = -1;
 				for(int i = 0; i < courant->nb_enfants; i++){
 					if(calculer_B_Valeur(courant->enfants[i]) > score){
-						prochain = courant->enfants[i];
 						score = calculer_B_Valeur(courant->enfants[i]);
+						prochain = courant->enfants[i];
 					}
 				}
 				courant = prochain;
 			}
 			else{
-
 				simu = 1;
 			}
 		}else{
-
 			//Mode Simulation
-			//ON joue un coup aléatoire
-			coups = coups_possibles(courant->etat);
-			Coup * c = coups[rand()%nb_coups_possibles(courant->etat)];
-			//On creer un enfant avec ce coup
-			courant = ajouterEnfant(courant, c);
+
 			//Check si c'est fini
 			FinDePartie fin = testFin(courant->etat);
-			if ( fin == ORDI_GAGNE ){
-					//On remonte l'arbre en incrementant le nb de victoires et de Simulation
-					while(courant->parent != NULL){
-						courant = courant->parent;
-						courant->nb_simus = courant->nb_simus + 1;
-						courant->nb_victoires = courant->nb_victoires + 1;
-					}
-					simu = 0;
-			}
-			if ( fin == HUMAIN_GAGNE || fin == MATCHNUL ){
-				while(courant->parent != NULL){
-					courant = courant->parent;
-					courant->nb_simus = courant->nb_simus + 1;
+			if(fin != NON){
+				if ( fin == ORDI_GAGNE ){
+						//On remonte l'arbre en incrementant le nb de victoires et de Simulation
+						while(courant->parent != NULL){
+							courant = courant->parent;
+							courant->nb_simus = courant->nb_simus + 1;
+							courant->nb_victoires = courant->nb_victoires + 1;
+						}
+						simu = 0;
 				}
-				simu = 0;
-			}
+				if ( fin == HUMAIN_GAGNE || fin == MATCHNUL ){
+						while(courant->parent != NULL){
+							courant = courant->parent;
+							courant->nb_simus = courant->nb_simus + 1;
+						}
+						simu = 0;
+				}
+			}else{
+				//Sinon on joue un coup aléatoire
+				coups = coups_possibles(courant->etat);
+				Coup * c = coups[rand()%nb_coups_possibles(courant->etat)];
+				//On creer un enfant avec ce coup
+				courant = ajouterEnfant(courant, c);
+		}
+
 		}
 		toc = clock();
 		temps = (int)( ((double) (toc - tic)) / CLOCKS_PER_SEC );
 		iter ++;
 	} while ( temps < tempsmax );
 
+
 	Noeud * prochain = NULL;
 	double score = -1;
-	for(int i = 0; i < courant->nb_enfants; i++){
-		if(calculer_B_Valeur(courant->enfants[i]) > score){
-			prochain = courant->enfants[i];
-			score = calculer_B_Valeur(courant->enfants[i]);
+	for(int i = 0; i < racine->nb_enfants; i++){
+		printf("Score du coup %d : %f \n",i,calculer_B_Valeur(racine->enfants[i]));
+		fflush(stdout);
+		if(calculer_B_Valeur(racine->enfants[i]) > score){
+			prochain = racine->enfants[i];
+			score = calculer_B_Valeur(racine->enfants[i]);
 		}
 	}
+	printf("Score du meilleur coup %f \n",score);
+	fflush(stdout);
 	// Jouer le meilleur premier coup
 	jouerCoup(etat, prochain->coup);
 

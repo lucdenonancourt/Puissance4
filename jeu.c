@@ -302,9 +302,9 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 
 	meilleur_coup = coups[ rand()%k ]; // choix aléatoire
 
-	/*  TODO :
-		- supprimer la sélection aléatoire du meilleur coup ci-dessus
-		- implémenter l'algorithme MCTS-UCT pour déterminer le meilleur coup ci-dessous
+	 //TODO :
+		//- supprimer la sélection aléatoire du meilleur coup ci-dessus
+		//- implémenter l'algorithme MCTS-UCT pour déterminer le meilleur coup ci-dessous
 
 	int iter = 0;
 
@@ -330,6 +330,16 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	// Penser à libérer la mémoire :
 	freeNoeud(racine);
 	free (coups);
+}
+
+int calculer_B_Valeur(Noeud * noeud){
+	double ui = noeud->nb_victoires / noeud->nb_simus;
+	//On fixe la constante c a Racine de 2
+	double c = sqrt(2);
+
+	double res = ui + c * sqrt(log(noeud->parent->nb_simus)/noeud->nb_simus);
+
+	return res;
 }
 
 int main(void) {

@@ -13,7 +13,7 @@
 // Paramètres du jeu
 #define LARGEUR_MAX 7 		// nb max de fils pour un noeud (= nb max de coups possibles)
 
-#define TEMPS 1		// temps de calcul pour un coup avec MCTS (en secondes)
+#define TEMPS 2		// temps de calcul pour un coup avec MCTS (en secondes)
 
 // macros
 #define AUTRE_JOUEUR(i) (1-(i))
@@ -176,8 +176,8 @@ typedef struct NoeudSt {
 	int nb_enfants;	// nb d'enfants présents dans la liste
 
 	// POUR MCTS:
-	int nb_victoires;
-	int nb_simus;
+	double nb_victoires;
+	double nb_simus;
 
 } Noeud;
 
@@ -311,16 +311,6 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	Noeud * racine = nouveauNoeud(NULL, NULL);
 	racine->etat = copieEtat(etat);
 
-	// créer les premiers noeuds:
-	coups = coups_possibles(racine->etat);
-	int k = 0;
-	Noeud * enfant;
-	while ( coups[k] != NULL) {
-		enfant = ajouterEnfant(racine, coups[k]);
-		k++;
-	}
-
-
  //meilleur_coup = coups[ rand()%k ]; // choix aléatoire
 
 	int iter = 0;
@@ -331,27 +321,30 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	//Simulation
 	int simu = 0;
 
+	//Etat de simulation
 	do {
 		if(simu == 0){
-			//On selectionne le meilleur noeud enfant (tant qu'il y en a)
-			if(courant->nb_enfants != 0 && testFin(courant->etat) == NON){
-				//On parcourt les enfants, et on selectionne celui avec le meilleur score
+				//Si le noeud est completement développé, on passe au suivant
+			if(testFin(courant->etat) == 0 && courant->nb_enfants == nb_coups_possibles(courant->etat)){
+				//On prend le meilleur noeud suivant
 				Noeud * prochain = NULL;
 				double score = -1;
 				for(int i = 0; i < courant->nb_enfants; i++){
 					if(calculer_B_Valeur(courant->enfants[i]) > score){
-						score = calculer_B_Valeur(courant->enfants[i]);
 						prochain = courant->enfants[i];
+						score = calculer_B_Valeur(courant->enfants[i]);
 					}
 				}
 				courant = prochain;
 			}
 			else{
+				//On développe un noeud qui n'a pas été développé
+
+				//On passe au mode simulation
 				simu = 1;
 			}
 		}else{
 			//Mode Simulation
-
 			//Check si c'est fini
 			FinDePartie fin = testFin(courant->etat);
 			if(fin != NON){

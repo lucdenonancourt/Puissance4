@@ -11,9 +11,9 @@
 #include <time.h>
 
 // Paramètres du jeu
-#define LARGEUR_MAX 9 		// nb max de fils pour un noeud (= nb max de coups possibles)
+#define LARGEUR_MAX 7 		// nb max de fils pour un noeud (= nb max de coups possibles)
 
-#define TEMPS 5		// temps de calcul pour un coup avec MCTS (en secondes)
+#define TEMPS 1		// temps de calcul pour un coup avec MCTS (en secondes)
 
 // macros
 #define AUTRE_JOUEUR(i) (1-(i))
@@ -225,10 +225,6 @@ void freeNoeud ( Noeud * noeud) {
 // et retourne NON, MATCHNUL, ORDI_GAGNE ou HUMAIN_GAGNE
 FinDePartie testFin( Etat * etat ) {
 
-	// TODO...
-
-	/* par exemple	*/
-
 	// tester si un joueur a gagné
 	int i,j,k,n = 0;
 	for ( i=0;i < 6; i++) {
@@ -300,22 +296,47 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	}
 
 
-	meilleur_coup = coups[ rand()%k ]; // choix aléatoire
+ meilleur_coup = coups[ rand()%k ]; // choix aléatoire
 
 	/*  TODO :
 		- supprimer la sélection aléatoire du meilleur coup ci-dessus
 		- implémenter l'algorithme MCTS-UCT pour déterminer le meilleur coup ci-dessous
+*/
 
 	int iter = 0;
 
+	//Noeud courant
+	Noeud * courant = racine;
+	//Simulation
+	int simu = 0;
+
 	do {
-
-
-
-		// à compléter par l'algorithme MCTS-UCT...
-
-
-
+		if(simu == 0){
+			//On selectionne le meilleur noeud enfant (tant qu'il y en a)
+			if(courant->nb_enfants != 0){
+				//On parcourt les enfants, et on selectionne celui avec le meilleur score
+				Noeud * prochain = NULL;
+				float score = -1;
+				for(int i = 0; i < courant->nb_enfants; i++){
+					//if(calculer_B_Valeur(courant->enfants[i]) > score)
+					//	prochain = courant->enfants[i];
+					//	score = calculer_B_Valeur(courant->enfants[i]);
+				}
+			}
+			else{
+				//Le noeud n'as pas d'enfants, il faut donc les creer
+				coups = coups_possibles(courant->etat);
+				int k = 0;
+				Noeud * new_enfant;
+				while ( coups[k] != NULL) {
+					new_enfant = ajouterEnfant(courant, coups[k]);
+					k++;
+				}
+				simu = 1;
+			}
+		}else{
+			meilleur_coup = coups[ rand()%k ];
+		}
 
 		toc = clock();
 		temps = (int)( ((double) (toc - tic)) / CLOCKS_PER_SEC );

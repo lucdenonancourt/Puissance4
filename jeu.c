@@ -191,7 +191,7 @@ Noeud * nouveauNoeud (Noeud * parent, Coup * coup ) {
 
 	// POUR MCTS:
 	noeud->nb_victoires = 0;
-	noeud->nb_simus = 0;
+	noeud->nb_simus = 1;
 
 
 	return noeud;
@@ -270,6 +270,16 @@ FinDePartie testFin( Etat * etat ) {
 }
 
 
+int calculer_B_Valeur(Noeud * noeud){
+	double ui = noeud->nb_victoires / noeud->nb_simus;
+	//On fixe la constante c a Racine de 2
+	double c = sqrt(2);
+
+	double res = ui + c * sqrt(log(noeud->parent->nb_simus)/noeud->nb_simus);
+
+	return res;
+}
+
 
 // Calcule et joue un coup de l'ordinateur avec MCTS-UCT
 // en tempsmax secondes
@@ -309,19 +319,21 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	Noeud * courant = racine;
 	//Simulation
 	int simu = 0;
-
 	do {
+
 		if(simu == 0){
 			//On selectionne le meilleur noeud enfant (tant qu'il y en a)
 			if(courant->nb_enfants != 0){
 				//On parcourt les enfants, et on selectionne celui avec le meilleur score
 				Noeud * prochain = NULL;
-				float score = -1;
+				double score = -1;
 				for(int i = 0; i < courant->nb_enfants; i++){
-					//if(calculer_B_Valeur(courant->enfants[i]) > score)
-					//	prochain = courant->enfants[i];
-					//	score = calculer_B_Valeur(courant->enfants[i]);
+					if(calculer_B_Valeur(courant->enfants[i]) > score){
+						prochain = courant->enfants[i];
+						score = calculer_B_Valeur(courant->enfants[i]);
+					}
 				}
+				courant = prochain;
 			}
 			else{
 				//Le noeud n'as pas d'enfants, il faut donc les creer
@@ -335,8 +347,13 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 				simu = 1;
 			}
 		}else{
-			meilleur_coup = coups[ rand()%k ];
+			//Mode Simulation
+			//ON joue un coup aléatoire
+			//On creer un état avec ce coup
+			//Check si c'est fini
+			//
 		}
+
 
 		toc = clock();
 		temps = (int)( ((double) (toc - tic)) / CLOCKS_PER_SEC );

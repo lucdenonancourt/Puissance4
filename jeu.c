@@ -203,7 +203,7 @@ Noeud * nouveauNoeud (Noeud * parent, Coup * coup ) {
 
 	// POUR MCTS:
 	noeud->nb_victoires = 0;
-	noeud->nb_simus = 1;
+	noeud->nb_simus = 0;
 
 
 	return noeud;
@@ -307,7 +307,7 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	// Créer l'arbre de recherche
 	Noeud * racine = nouveauNoeud(NULL, NULL);
 	racine->etat = copieEtat(etat);
-
+/*
 	// créer les premiers noeuds:
 	coups = coups_possibles(racine->etat);
 	int k = 0;
@@ -316,14 +316,9 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 		enfant = ajouterEnfant(racine, coups[k]);
 		k++;
 	}
-
-
- meilleur_coup = coups[ rand()%k ]; // choix aléatoire
-
-	/*  TODO :
-		- supprimer la sélection aléatoire du meilleur coup ci-dessus
-		- implémenter l'algorithme MCTS-UCT pour déterminer le meilleur coup ci-dessous
 */
+
+ //meilleur_coup = coups[ rand()%k ]; // choix aléatoire
 
 	int iter = 0;
 
@@ -353,10 +348,11 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 				simu = 1;
 			}
 		}else{
+
 			//Mode Simulation
 			//ON joue un coup aléatoire
 			coups = coups_possibles(courant->etat);
-			Coup * c = coups[rand()*nb_coups_possibles(courant->etat)];
+			Coup * c = coups[rand()%nb_coups_possibles(courant->etat)];
 			//On creer un enfant avec ce coup
 			courant = ajouterEnfant(courant, c);
 			//Check si c'est fini
@@ -365,15 +361,15 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 					//On remonte l'arbre en incrementant le nb de victoires et de Simulation
 					while(courant->parent != NULL){
 						courant = courant->parent;
-						courant->nb_simus = courant->nb_simus++;
-						courant->nb_victoires = courant->nb_victoires++;
+						courant->nb_simus = courant->nb_simus + 1;
+						courant->nb_victoires = courant->nb_victoires + 1;
 					}
 					simu = 0;
 			}
 			if ( fin == HUMAIN_GAGNE || fin == MATCHNUL ){
 				while(courant->parent != NULL){
 					courant = courant->parent;
-					courant->nb_simus = courant->nb_simus++;
+					courant->nb_simus = courant->nb_simus + 1;
 				}
 				simu = 0;
 			}
@@ -383,16 +379,14 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 		iter ++;
 	} while ( temps < tempsmax );
 
-	/* fin de l'algorithme  */
 	Noeud * prochain = NULL;
 	double score = -1;
-	for(int i = 0; i < racine->nb_enfants; i++){
-		if(calculer_B_Valeur(racine->enfants[i]) > score){
-			prochain = racine->enfants[i];
-			score = calculer_B_Valeur(racine->enfants[i]);
+	for(int i = 0; i < courant->nb_enfants; i++){
+		if(calculer_B_Valeur(courant->enfants[i]) > score){
+			prochain = courant->enfants[i];
+			score = calculer_B_Valeur(courant->enfants[i]);
 		}
 	}
-
 	// Jouer le meilleur premier coup
 	jouerCoup(etat, prochain->coup);
 

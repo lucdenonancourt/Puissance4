@@ -48,13 +48,9 @@ Etat * copieEtat( Etat * src ) {
 
 	etat->joueur = src->joueur;
 
-
-	// TODO: à compléter avec la copie de l'état src dans etat
-
-	/* par exemple : */
 	int i,j;
-	for (i=0; i< 3; i++)
-		for ( j=0; j<3; j++)
+	for (i=0; i < 6; i++)
+		for ( j=0; j < 7; j++)
 			etat->plateau[i][j] = src->plateau[i][j];
 
 
@@ -66,9 +62,6 @@ Etat * copieEtat( Etat * src ) {
 Etat * etat_initial( void ) {
 	Etat * etat = (Etat *)malloc(sizeof(Etat));
 
-	// TODO: à compléter avec la création de l'état initial
-
-	/* par exemple : */
 	int i,j;
 	for (i=0; i< 6; i++)
 		for ( j=0; j<7; j++)
@@ -80,9 +73,6 @@ Etat * etat_initial( void ) {
 
 void afficheJeu(Etat * etat) {
 
-	// TODO: à compléter
-
-	/* par exemple : */
 	int i,j;
 	printf("   |");
 	for ( j = 0; j < 7; j++)
@@ -103,7 +93,6 @@ void afficheJeu(Etat * etat) {
 
 
 // Nouveau coup
-// TODO: adapter la liste de paramètres au jeu
 Coup * nouveauCoup(int j ) {
 	Coup * coup = (Coup *)malloc(sizeof(Coup));
 

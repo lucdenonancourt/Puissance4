@@ -144,10 +144,22 @@ Coup ** coups_possibles( Etat * etat ) {
 			}
 	}
 	/* fin de l'exemple */
-
 	coups[k] = NULL;
-
 	return coups;
+}
+
+// Retourne le nombre de coups possible depuis un etat
+int nb_coups_possibles( Etat * etat ) {
+
+	int k = 0;
+	int j;
+		for (j=0; j < 7; j++) {
+			if ( etat->plateau[0][j] == ' ' ) {
+				k++;
+			}
+	}
+
+	return k;
 }
 
 
@@ -317,10 +329,11 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 
 	//Noeud courant
 	Noeud * courant = racine;
+
 	//Simulation
 	int simu = 0;
-	do {
 
+	do {
 		if(simu == 0){
 			//On selectionne le meilleur noeud enfant (tant qu'il y en a)
 			if(courant->nb_enfants != 0){
@@ -336,34 +349,52 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 				courant = prochain;
 			}
 			else{
-				//Le noeud n'as pas d'enfants, il faut donc les creer
-				coups = coups_possibles(courant->etat);
-				int k = 0;
-				Noeud * new_enfant;
-				while ( coups[k] != NULL) {
-					new_enfant = ajouterEnfant(courant, coups[k]);
-					k++;
-				}
+
 				simu = 1;
 			}
 		}else{
 			//Mode Simulation
 			//ON joue un coup aléatoire
-			//On creer un état avec ce coup
+			coups = coups_possibles(courant->etat);
+			Coup * c = coups[rand()*nb_coups_possibles(courant->etat)];
+			//On creer un enfant avec ce coup
+			courant = ajouterEnfant(courant, c);
 			//Check si c'est fini
-			//
+			FinDePartie fin = testFin(courant->etat);
+			if ( fin == ORDI_GAGNE ){
+					//On remonte l'arbre en incrementant le nb de victoires et de Simulation
+					while(courant->parent != NULL){
+						courant = courant->parent;
+						courant->nb_simus = courant->nb_simus++;
+						courant->nb_victoires = courant->nb_victoires++;
+					}
+					simu = 0;
+			}
+			if ( fin == HUMAIN_GAGNE || fin == MATCHNUL ){
+				while(courant->parent != NULL){
+					courant = courant->parent;
+					courant->nb_simus = courant->nb_simus++;
+				}
+				simu = 0;
+			}
 		}
-
-
 		toc = clock();
 		temps = (int)( ((double) (toc - tic)) / CLOCKS_PER_SEC );
 		iter ++;
 	} while ( temps < tempsmax );
 
 	/* fin de l'algorithme  */
+	Noeud * prochain = NULL;
+	double score = -1;
+	for(int i = 0; i < racine->nb_enfants; i++){
+		if(calculer_B_Valeur(racine->enfants[i]) > score){
+			prochain = racine->enfants[i];
+			score = calculer_B_Valeur(racine->enfants[i]);
+		}
+	}
 
 	// Jouer le meilleur premier coup
-	jouerCoup(etat, meilleur_coup );
+	jouerCoup(etat, prochain->coup);
 
 	// Penser à libérer la mémoire :
 	freeNoeud(racine);

@@ -292,6 +292,14 @@ double calculer_B_Valeur(Noeud * noeud){
 
 	double res = ui + c * sqrt(log(noeud->parent->nb_simus)/noeud->nb_simus);
 
+	printf("joueur %d\n", noeud->parent->joueur);
+	if(noeud->parent != NULL){
+		if (noeud->parent->joueur == 0) {
+			res = res * -1;
+		}
+	}
+
+
 	return res;
 }
 

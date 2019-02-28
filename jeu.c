@@ -13,7 +13,7 @@
 // Paramètres du jeu
 #define LARGEUR_MAX 7 		// nb max de fils pour un noeud (= nb max de coups possibles)
 
-#define TEMPS 2		// temps de calcul pour un coup avec MCTS (en secondes)
+#define TEMPS 1		// temps de calcul pour un coup avec MCTS (en secondes)
 
 // macros
 #define AUTRE_JOUEUR(i) (1-(i))
@@ -28,9 +28,6 @@ typedef struct EtatSt {
 
 	int joueur; // à qui de jouer ?
 
-	// TODO: à compléter par la définition de l'état du jeu
-
-	/* par exemple, pour morpion: */
 	char plateau[6][7];
 
 } Etat;
@@ -284,13 +281,21 @@ FinDePartie testFin( Etat * etat ) {
 
 double calculer_B_Valeur(Noeud * noeud){
 	if(noeud->nb_simus == 0)
-		return 0;
+		return 999999;
 
 	double ui = noeud->nb_victoires / noeud->nb_simus;
 	//On fixe la constante c a Racine de 2
 	double c = sqrt(2);
 
 	double res = ui + c * sqrt(log(noeud->parent->nb_simus)/noeud->nb_simus);
+/*
+	if(noeud->parent != NULL){
+		printf("joueur %d\n", noeud->parent->joueur);
+		if (noeud->parent->joueur == 0) {
+			res = res * -1;
+		}
+	}*/
+
 
 	return res;
 }
@@ -324,8 +329,8 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	//Etat de simulation
 	do {
 		if(simu == 0){
-				//Si le noeud est completement développé, on passe au suivant
-			if(testFin(courant->etat) == 0 && courant->nb_enfants == nb_coups_possibles(courant->etat)){
+			//Si le noeud est completement développé, on passe au suivant
+			if(courant->nb_enfants == nb_coups_possibles(courant->etat)){
 				//On prend le meilleur noeud suivant
 				Noeud * prochain = NULL;
 				double score = -1;
@@ -339,7 +344,22 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 			}
 			else{
 				//On développe un noeud qui n'a pas été développé
-
+				//On parcourt les coups possible dont on stock les colonnes jouées en index d'un array
+				Coup ** coups = coups_possibles(courant->etat);
+				int possible[7] = {0};
+				for(int i = 0; i < nb_coups_possibles(courant->etat); i++){
+					possible[coups[i]->colonne] = 1;
+				}
+				//On parcourt les coups deja joué jusqu'a trouvé un coup qui n'a pas été joué
+				int iterator;
+				for(iterator = 0; iterator < courant->nb_enfants; iterator++){
+						if(possible[courant->enfants[iterator]->coup->colonne] == 0)
+							break;
+				}
+				//On peut donc jouer le coup iterator
+				Coup * c = nouveauCoup(iterator);
+				//On creer un enfant avec ce cou
+				courant = ajouterEnfant(courant, c);
 				//On passe au mode simulation
 				simu = 1;
 			}
@@ -382,15 +402,14 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	Noeud * prochain = NULL;
 	double score = -1;
 	for(int i = 0; i < racine->nb_enfants; i++){
-		printf("Score du coup %d : %f \n",i,calculer_B_Valeur(racine->enfants[i]));
-		fflush(stdout);
 		if(calculer_B_Valeur(racine->enfants[i]) > score){
-			prochain = racine->enfants[i];
-			score = calculer_B_Valeur(racine->enfants[i]);
+			//Si on ne peut pas jouer ce coup, on ne le sauvegarde pas
+			if(etat->plateau[0][racine->enfants[i]->coup->colonne] == ' '){
+				prochain = racine->enfants[i];
+				score = calculer_B_Valeur(racine->enfants[i]);
+			}
 		}
 	}
-	printf("Score du meilleur coup %f \n",score);
-	fflush(stdout);
 	// Jouer le meilleur premier coup
 	jouerCoup(etat, prochain->coup);
 

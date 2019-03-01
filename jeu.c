@@ -419,11 +419,13 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 				score = calculer_B_Valeur(racine->enfants[i]);
 			}
 		}
+		/**
 		//Si c'est un coup gagnant on le prend directement
 		if(testFin(racine->enfants[i]->etat) == ORDI_GAGNE){
 			prochain = racine->enfants[i];
 			break;
 		}
+		*/
 	}
 	printf("Nombre de simulation pour calculer le coup = %f\n", racine->nb_simus);
 	printf("Probabilité de victoire %f%% \n", (prochain->nb_victoires/prochain->nb_simus) * 100);

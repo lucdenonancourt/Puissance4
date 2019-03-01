@@ -13,7 +13,7 @@
 // Paramètres du jeu
 #define LARGEUR_MAX 7 		// nb max de fils pour un noeud (= nb max de coups possibles)
 
-#define TEMPS 1	// temps de calcul pour un coup avec MCTS (en secondes)
+#define TEMPS 3	// temps de calcul pour un coup avec MCTS (en secondes)
 
 // macros
 #define AUTRE_JOUEUR(i) (1-(i))
@@ -408,8 +408,10 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 		iter ++;
 	} while ( temps < tempsmax );
 
+
 	Noeud * prochain = NULL;
 	double score = -1;
+
 	for(int i = 0; i < racine->nb_enfants; i++){
 		//printf("%lf \n", calculer_B_Valeur(racine->enfants[i]));
 		if(calculer_B_Valeur(racine->enfants[i]) > score){
@@ -419,6 +421,10 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 				score = calculer_B_Valeur(racine->enfants[i]);
 			}
 		}
+	}
+
+
+
 		/**
 		//Si c'est un coup gagnant on le prend directement
 		if(testFin(racine->enfants[i]->etat) == ORDI_GAGNE){
@@ -426,7 +432,36 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 			break;
 		}
 		*/
-	}
+
+		/**  MAX **/
+		/*
+		for(int i = 0; i < racine->nb_enfants; i++){
+			double ui = racine->enfants[i]->nb_victoires / racine->enfants[i]->nb_simus;
+			if(ui > score){
+				//Si on ne peut pas jouer ce coup, on ne le sauvegarde pas
+				if(etat->plateau[0][racine->enfants[i]->coup->colonne] == ' '){
+					prochain = racine->enfants[i];
+					score = ui;
+				}
+			}
+		}
+		*/
+
+			/** ROBUSTE **/
+			/*
+			for(int i = 0; i < racine->nb_enfants; i++){
+				if(racine->enfants[i]->nb_simus > score){
+					//Si on ne peut pas jouer ce coup, on ne le sauvegarde pas
+					if(etat->plateau[0][racine->enfants[i]->coup->colonne] == ' '){
+						prochain = racine->enfants[i];
+						score = racine->enfants[i]->nb_simus;
+					}
+				}
+			}
+			*/
+
+
+
 	printf("Nombre de simulation pour calculer le coup = %f\n", racine->nb_simus);
 	printf("Probabilité de victoire %f%% \n", (prochain->nb_victoires/prochain->nb_simus) * 100);
 	// Jouer le meilleur premier coup

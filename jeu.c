@@ -284,15 +284,12 @@ double calculer_B_Valeur(Noeud * noeud){
 		return 999999999;
 
 	double ui = noeud->nb_victoires / noeud->nb_simus;
-
 	if(noeud->parent->joueur == 1)
-		ui *= -1;
-
+			ui *= -1;
 	//On fixe la constante c a Racine de 2
 	double c = sqrt(2);
 
 	double res = ui + c * sqrt(log(noeud->parent->nb_simus)/noeud->nb_simus);
-
 	return res;
 }
 
@@ -311,7 +308,7 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	// Créer l'arbre de recherche
 	Noeud * racine = nouveauNoeud(NULL, NULL);
 	racine->etat = copieEtat(etat);
-
+	Etat * etat_simulation = copieEtat(etat);
  //meilleur_coup = coups[ rand()%k ]; // choix aléatoire
 
 	int iter = 0;
@@ -342,9 +339,13 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 				courant = prochain;
 			}
 			else{
-				//SI aucun coup ne ne peut etre joué, on saute cette etape
+				//SI aucun coup ne ne peut etre joué, on remonte l'arbre en update le nb visite
 				if(nb_coups_possibles(courant->etat) == 0){
-					simu = 1;
+					courant->nb_simus = courant->nb_simus + 1;
+					while(courant->parent != NULL){
+						courant = courant->parent;
+						courant->nb_simus = courant->nb_simus + 1;
+					}
 					continue;
 				}
 
@@ -370,25 +371,30 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 
 				//On creer un enfant avec ce coup
 				courant = ajouterEnfant(courant, c);
+				etat_simulation = copieEtat(courant->etat);
 				//On passe au mode simulation
 				simu = 1;
 
 			}
 		}else{
 			//Mode Simulation
-			//Check si c'est fini
-			FinDePartie fin = testFin(courant->etat);
+			//On regarde si on est arrivé a une feuille
+			FinDePartie fin = testFin(etat_simulation);
 			if(fin != NON){
 				if ( fin == ORDI_GAGNE ){
-						//On remonte l'arbre en incrementant le nb de victoires et de Simulation
+						//Si on a gagné, on remonte l'arbre en ajustant les valeurs des noeuds
+						courant->nb_victoires += 1;
+						courant->nb_simus += 1;
 						while(courant->parent != NULL){
 							courant = courant->parent;
-							courant->nb_simus = courant->nb_simus + 1;
-							courant->nb_victoires = courant->nb_victoires + 1;
+							courant->nb_simus += 1;
+							courant->nb_victoires += 1;
 						}
 						simu = 0;
 				}
 				if ( fin == HUMAIN_GAGNE || fin == MATCHNUL ){
+						//Si on a perdu, on met juste a jour le nombre de visite.
+						courant->nb_simus = courant->nb_simus + 1;
 						while(courant->parent != NULL){
 							courant = courant->parent;
 							courant->nb_simus = courant->nb_simus + 1;
@@ -397,10 +403,10 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 				}
 			}else{
 				//Sinon on joue un coup aléatoire
-				coups = coups_possibles(courant->etat);
-				Coup * c = coups[rand()%nb_coups_possibles(courant->etat)];
-				//On creer un enfant avec ce coup
-				courant = ajouterEnfant(courant, c);
+				coups = coups_possibles(etat_simulation);
+				Coup * c = coups[rand()%nb_coups_possibles(etat_simulation)];
+				//On joue ce coup sur l'état de simulation
+				jouerCoup(etat_simulation, c);
 			}
 		}
 		toc = clock();
@@ -412,26 +418,22 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	Noeud * prochain = NULL;
 	double score = -1;
 
+	//On parcourt les différents coups possibles et on prend le meilleur
 	for(int i = 0; i < racine->nb_enfants; i++){
-		//printf("%lf \n", calculer_B_Valeur(racine->enfants[i]));
-		if(calculer_B_Valeur(racine->enfants[i]) > score){
-			//Si on ne peut pas jouer ce coup, on ne le sauvegarde pas
-			if(etat->plateau[0][racine->enfants[i]->coup->colonne] == ' '){
-				prochain = racine->enfants[i];
-				score = calculer_B_Valeur(racine->enfants[i]);
-			}
-		}
-	}
-
-
-
-		/**
-		//Si c'est un coup gagnant on le prend directement
+		//Premiere optimisation hors-MCTS : On choisit toujours le choix gagnant
 		if(testFin(racine->enfants[i]->etat) == ORDI_GAGNE){
 			prochain = racine->enfants[i];
 			break;
 		}
-		*/
+
+		if(calculer_B_Valeur(racine->enfants[i]) > score){
+			//Si on ne peut pas jouer ce coup, on ne le sauvegarde pas
+			if(etat->plateau[0][racine->enfants[i]->coup->colonne] == ' '){
+					prochain = racine->enfants[i];
+				score = calculer_B_Valeur(racine->enfants[i]);
+			}
+		}
+	}
 
 		/**  MAX **/
 		/*

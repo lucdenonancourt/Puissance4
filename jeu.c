@@ -13,7 +13,7 @@
 // Paramètres du jeu
 #define LARGEUR_MAX 7 		// nb max de fils pour un noeud (= nb max de coups possibles)
 
-#define TEMPS 10		// temps de calcul pour un coup avec MCTS (en secondes)
+#define TEMPS 1	// temps de calcul pour un coup avec MCTS (en secondes)
 
 // macros
 #define AUTRE_JOUEUR(i) (1-(i))
@@ -284,13 +284,14 @@ double calculer_B_Valeur(Noeud * noeud){
 		return 999999999;
 
 	double ui = noeud->nb_victoires / noeud->nb_simus;
+
+	if(noeud->parent->joueur == 1)
+		ui *= -1;
+
 	//On fixe la constante c a Racine de 2
 	double c = sqrt(2);
 
 	double res = ui + c * sqrt(log(noeud->parent->nb_simus)/noeud->nb_simus);
-
-	if(noeud->parent->joueur == 1)
-		res *= -1;
 
 	return res;
 }
@@ -410,7 +411,7 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	Noeud * prochain = NULL;
 	double score = -1;
 	for(int i = 0; i < racine->nb_enfants; i++){
-		printf("%lf \n", calculer_B_Valeur(racine->enfants[i]));
+		//printf("%lf \n", calculer_B_Valeur(racine->enfants[i]));
 		if(calculer_B_Valeur(racine->enfants[i]) > score){
 			//Si on ne peut pas jouer ce coup, on ne le sauvegarde pas
 			if(etat->plateau[0][racine->enfants[i]->coup->colonne] == ' '){
@@ -424,6 +425,8 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 			break;
 		}
 	}
+	printf("Nombre de simulation pour calculer le coup = %f\n", racine->nb_simus);
+	printf("Probabilité de victoire %f%% \n", (prochain->nb_victoires/prochain->nb_simus) * 100);
 	// Jouer le meilleur premier coup
 	jouerCoup(etat, prochain->coup);
 
